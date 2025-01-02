@@ -17,9 +17,15 @@ def query_llm(llm, vector_store, user_query):
     response = llm.generate([context + user_query])
     return response
 
-user_query = input("Ask a question: \n")
-llm = load_llm()
-embeddings = HuggingFaceEmbeddings()
-vector_store = FAISS.load_local("faiss_AiDoc", embeddings, allow_dangerous_deserialization=True)
-answer = query_llm(llm, vector_store, user_query)
-print("Answer:", answer)
+
+# Main function to run the program
+def main():
+    user_query = input("Ask a question: \n")
+    llm = load_llm()
+    embeddings = HuggingFaceEmbeddings()
+    vector_store = FAISS.load_local("faiss_AiDoc", embeddings, allow_dangerous_deserialization=True)
+    answer = query_llm(llm, vector_store, user_query)
+    print("Answer:", answer)
+
+if __name__ == "__main__":
+    main()
