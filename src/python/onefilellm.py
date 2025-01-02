@@ -27,6 +27,11 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 import xml.etree.ElementTree as ET
+from dotenv import load_dotenv
+
+load_dotenv()
+github_token = os.getenv('GITHUB_TOKEN')
+
 
 def safe_file_read(filepath, fallback_encoding='latin1'):
     try:
@@ -39,7 +44,7 @@ def safe_file_read(filepath, fallback_encoding='latin1'):
 nltk.download("stopwords", quiet=True)
 stop_words = set(stopwords.words("english"))
 
-TOKEN = os.getenv('GITHUB_TOKEN', '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')
+TOKEN = os.getenv('GITHUB_TOKEN', github_token)
 if TOKEN == 'default_token_here':
     raise EnvironmentError("GITHUB_TOKEN environment variable not set.")
 

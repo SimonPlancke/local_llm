@@ -32,29 +32,13 @@ def create_vector_store(docs):
     vector_store.save_local("faiss_AiDoc")  # Save the index locally
     return vector_store
 
-# Step 4: Set up the LLM
-def load_llm():
-    return HuggingFaceEndpoint(repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1")
-
-# Step 5: Query function
-def query_llm(llm, vector_store, user_query):
-    retriever = vector_store.as_retriever()
-    context = retriever.retrieve(user_query)
-    response = llm.generate(context + user_query)
-    return response
-
 # Main function to run the program
 def main():
     file_path = 'uncompressed_output.txt'
     text = read_file(file_path)
     docs = preprocess_text(text)
     vector_store = create_vector_store(docs)
-    # llm = load_llm()
 
-    # Example query
-    # user_query = input("Ask a question: ")
-    # answer = query_llm(llm, vector_store, user_query)
-    # print("Answer:", answer)
 
 if __name__ == "__main__":
     main()
