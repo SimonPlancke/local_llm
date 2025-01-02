@@ -17,7 +17,7 @@ def query_llm(llm, vector_store, user_query):
     response = llm.generate([context + user_query])
     return response
 
-user_query = "What are the 10 best side-hustles for 2025?"
+user_query = input("Ask a question: \n")
 llm = load_llm()
 embeddings = HuggingFaceEmbeddings()
 vector_store = FAISS.load_local("faiss_AiDoc", embeddings, allow_dangerous_deserialization=True)
