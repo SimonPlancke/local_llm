@@ -29,8 +29,6 @@ def create_vector_store(docs):
     text_embedding_pairs = zip(docs, text_embeddings)
     vector_store = FAISS.from_embeddings(text_embedding_pairs, embeddings)
 
-    # text_embeddings = list(zip(docs, embeddings))
-    # vector_store = FAISS.from_embeddings(text_embeddings=docs) #, embedding=embeddings)  # Pass only embeddings
     vector_store.save_local("faiss_AiDoc")  # Save the index locally
     return vector_store
 
