@@ -1,11 +1,11 @@
 from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpoint
 from langchain_community.vectorstores import FAISS
 
-# Step 4: Set up the LLM
+# Step 1: Set up the LLM
 def load_llm():
     return HuggingFaceEndpoint(repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1")
 
-# Step 5: Query function
+# Step 2: Query function
 def query_llm(llm, vector_store, user_query):
     retriever = vector_store.as_retriever()
     # context = retriever.retrieve(user_query)

@@ -22,7 +22,7 @@ def preprocess_text(text):
 # Step 3: Vectorization and Indexing
 def create_vector_store(docs):
     # Use SentenceTransformer for embeddings
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    # model = SentenceTransformer('all-MiniLM-L6-v2')
     # embeddings = model.encode(docs) #, convert_to_tensor=True)  # Generate embeddings for all documents
     embeddings = HuggingFaceEmbeddings()
     text_embeddings = embeddings.embed_documents(docs)
