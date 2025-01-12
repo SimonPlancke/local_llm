@@ -6,6 +6,7 @@ from nbconvert import PythonExporter
 import nbformat
 from nltk.corpus import stopwords
 import nltk
+from urllib.parse import urlparse
 
 
 def is_allowed_filetype(filename):

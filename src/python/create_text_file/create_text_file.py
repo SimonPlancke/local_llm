@@ -1,5 +1,9 @@
 import sys
 from urllib.parse import urlparse
+import tiktoken
+import re
+import pyperclip
+
 
 # Import functions from library Rich (https://github.com/Textualize/rich)
 from rich import print
@@ -50,7 +54,21 @@ def safe_file_read(filepath, fallback_encoding:str='latin1') -> str:
         with open(filepath, "r", encoding=fallback_encoding) as file:
             return file.read()
         
+def get_token_count(text, disallowed_special=[], chunk_size=1000):
+    enc = tiktoken.get_encoding("cl100k_base")
 
+    # Remove XML tags
+    text_without_tags = re.sub(r'<[^>]+>', '', text)
+
+    # Split the text into smaller chunks
+    chunks = [text_without_tags[i:i+chunk_size] for i in range(0, len(text_without_tags), chunk_size)]
+    total_tokens = 0
+
+    for chunk in chunks:
+        tokens = enc.encode(chunk, disallowed_special=disallowed_special)
+        total_tokens += len(tokens)
+    
+    return total_tokens
 
 def main():
     console = Console()
@@ -88,9 +106,9 @@ def main():
     
     console.print(f"\n[bold bright_green]You entered:[/bold bright_green] [bold bright_yellow]{input_path}[/bold bright_yellow]\n")
 
-    output_file = "uncompressed_output.txt"
-    processed_file = "compressed_output.txt"
-    urls_list_file = "processed_urls.txt"
+    output_file = "./uncompressed_output.txt"
+    processed_file = "./compressed_output.txt"
+    # urls_list_file = "processed_urls.txt"
 
     with Progress(
         TextColumn("[bold bright_blue]{task.description}"),
@@ -105,7 +123,7 @@ def main():
         try:
             # Git functions
             if "github.com" in input_path:
-                gitmethods_object = GitMethods()
+                gitmethods_object = GitMethods(url=input_path)
                 final_output = gitmethods_object.handle_git_url()
 
             # URL functions
@@ -126,7 +144,7 @@ def main():
             
             # Local folder
             else:
-                final_output = FolderMethods.process_local_folder(input_path)
+                final_output = FolderMethods.process_local_folder(filepath=input_path)
 
             progress.update(task, advance=50)
 

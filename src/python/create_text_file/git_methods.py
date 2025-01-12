@@ -39,8 +39,8 @@ class GitMethods():
 
         return final_output
     
-    def process_git_directory(self, repo_content):
-        response = requests.get(self.url, headers=self.headers)
+    def process_git_directory(self, url, repo_content):
+        response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         files = response.json()
 
@@ -72,9 +72,9 @@ class GitMethods():
         if not base_url:
             base_url = self.url
 
-        url_parts = base_url.split("/")
+        print(base_url)
         api_base_url = "https://api.github.com/repos"
-        repo_url_parts = url_parts.split("https://github.com/")[-1].split("/")
+        repo_url_parts = base_url.split("https://github.com/")[-1].split("/")
         repo_name = "/".join(repo_url_parts[:2])
 
         # Detect if we have a branch or tag reference
@@ -96,9 +96,9 @@ class GitMethods():
 
         # Configure a variable with a XML-like structure
         # This variable will be exported as a .txt file
-        repo_content = [f'<source type="github_repository" url="{url_parts}">']
+        repo_content = [f'<source type="github_repository" url="{base_url}">']
 
-        self.process_git_directory(contents_url, repo_content, self.headers)
+        self.process_git_directory(contents_url, repo_content)
         repo_content.append('</source>')
         print("All files processed.")
 
@@ -146,10 +146,10 @@ class GitMethods():
         formatted_text += '<pull_request_info>\n'
 
         # Add generic elements: title, description, merge_details
-        formatted_text += f'<title>{generic_functions.escape_xml(pull_request_data["title"])}</title>\n'
-        formatted_text += f'<description>{generic_functions.escape_xml(pull_request_data["body"])}</description>\n'
+        formatted_text += f'<title>{escape_xml(pull_request_data["title"])}</title>\n'
+        formatted_text += f'<description>{escape_xml(pull_request_data["body"])}</description>\n'
         formatted_text += '<merge_details>\n'
-        formatted_text += f'{generic_functions.escape_xml(pull_request_data["user"]["login"])} wants to merge {pull_request_data["commits"]} commit into {repo_owner}:{pull_request_data["base"]["ref"]} from {pull_request_data["head"]["label"]}\n'
+        formatted_text += f'{escape_xml(pull_request_data["user"]["login"])} wants to merge {pull_request_data["commits"]} commit into {repo_owner}:{pull_request_data["base"]["ref"]} from {pull_request_data["head"]["label"]}\n'
         formatted_text += '</merge_details>\n'
 
         # Iteratively add PR changes and comments left on PR as text fields
@@ -159,7 +159,7 @@ class GitMethods():
         comment_index = 0
 
         for line in diff_lines:
-            formatted_text += f'{generic_functions.escape_xml(line)}\n'
+            formatted_text += f'{escape_xml(line)}\n'
             while comment_index < len(all_comments) and all_comments[comment_index].get("position") == diff_lines.index(line):
                 comment = all_comments[comment_index]
                 # Comment element
@@ -172,9 +172,9 @@ class GitMethods():
                 </review_comment>
                 """
                 formatted_text += f'<review_comment>\n'
-                formatted_text += f'<author>{generic_functions.escape_xml(comment["user"]["login"])}</author>\n'
-                formatted_text += f'<content>{generic_functions.escape_xml(comment["body"])}</content>\n'
-                formatted_text += f'<path>{generic_functions.escape_xml(comment["path"])}</path>\n'
+                formatted_text += f'<author>{escape_xml(comment["user"]["login"])}</author>\n'
+                formatted_text += f'<content>{escape_xml(comment["body"])}</content>\n'
+                formatted_text += f'<path>{escape_xml(comment["path"])}</path>\n'
                 formatted_text += f'<line>{comment["original_line"]}</line>\n'
                 formatted_text += '</review_comment>\n'
                 comment_index += 1
@@ -216,8 +216,8 @@ class GitMethods():
         formatted_text += '<issue_info>\n'
 
         # Add generic elements: title, description
-        formatted_text += f'<title>{generic_functions.escape_xml(issue_data["title"])}</title>\n'
-        formatted_text += f'<description>{generic_functions.escape_xml(issue_data["body"])}</description>\n'
+        formatted_text += f'<title>{escape_xml(issue_data["title"])}</title>\n'
+        formatted_text += f'<description>{escape_xml(issue_data["body"])}</description>\n'
         
         # Iteratively add comments left on PR as text fields
         # Parent element: comments
@@ -234,8 +234,8 @@ class GitMethods():
             </comment>
             """
             formatted_text += '<comment>\n'
-            formatted_text += f'<author>{generic_functions.escape_xml(comment["user"]["login"])}</author>\n'
-            formatted_text += f'<content>{generic_functions.escape_xml(comment["body"])}</content>\n'
+            formatted_text += f'<author>{escape_xml(comment["user"]["login"])}</author>\n'
+            formatted_text += f'<content>{escape_xml(comment["body"])}</content>\n'
 
             # Extract code snippets from comments on a GitHub issue
             # Regex: Find all occurrences of URLs in the comment body that match the pattern for GitHub file links with line ranges

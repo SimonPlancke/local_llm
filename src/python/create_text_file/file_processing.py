@@ -4,6 +4,7 @@ import requests
 import wget
 
 from generic_functions import get_stopword_list, escape_xml, is_allowed_filetype, process_ipynb_file, download_file
+from git_methods import GitMethods
 
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
@@ -61,7 +62,6 @@ class TextFileMethods():
             with open(output_file, "w", encoding="utf-8") as out_file:
                 out_file.write(processed_text)
             Warning("XML parsing failed. Text preprocessing completed without XML structure.")
-
 
 class PDFFileMethods():
 
@@ -155,8 +155,6 @@ class PDFFileMethods():
             print("Sci-hub appears to be inaccessible or the document was not found. Please try again later.")
             return error_text
 
-
-# HERE!!!!
 class FolderMethods():
     def __init__(self, filepath):
         self.filepath = filepath
@@ -190,6 +188,7 @@ class FolderMethods():
         return formatted_content
     
     def process_directory(self, url, output):
+        headers = GitMethods.get_github_token()
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         files = response.json()
