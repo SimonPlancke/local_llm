@@ -1,7 +1,5 @@
-from dotenv import load_dotenv
-import os
 import sys
-import requests
+from urllib.parse import urlparse
 
 # Import functions from library Rich (https://github.com/Textualize/rich)
 from rich import print
@@ -14,75 +12,44 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 
-load_dotenv()
-github_token = os.getenv('GITHUB_TOKEN')
+# Repository classes and scripts
+from git_methods import GitMethods
+import generic_functions as generic_functions
+from file_processing import TextFileMethods, PDFFileMethods, FolderMethods, TranscriptionMethods
 
-def get_github_token():
-    TOKEN = os.getenv('GITHUB_TOKEN', github_token)
-    if TOKEN == 'default_token_here':
-        raise EnvironmentError("GITHUB_TOKEN environment variable not set.")
+def safe_file_read(filepath, fallback_encoding:str='latin1') -> str:
+    """
+    Safely reads the content of a file, attempting to handle encoding issues.
 
-    headers = {"Authorization": f"token {TOKEN}"}
-    return headers
+    This function first tries to read the file using UTF-8 encoding. If a UnicodeDecodeError occurs, 
+    it attempts to read the file again using the specified fallback encoding.
 
+    Parameters:
+    ----------
+    fallback_encoding : str, optional
+        The encoding to use if the file cannot be read with UTF-8. 
+        Default is 'latin1'.
 
-def process_directory(url, repo_content):
-    headers = get_github_token()
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    files = response.json()
+    Returns:
+    -------
+    str
+        The content of the file as a string.
 
-    for file in files:
-        if file["type"] == "file" and is_allowed_filetype(file["name"]):
-            print(f"Processing {file['path']}...")
+    Raises:
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    IOError
+        If there is an error reading the file (e.g., permission issues).
 
-            temp_file = f"temp_{file['name']}"
-            download_file(file["download_url"], temp_file)
-
-            repo_content.append(f'<file name="{escape_xml(file["path"])}">') 
-            if file["name"].endswith(".ipynb"):
-                repo_content.append(escape_xml(process_ipynb_file(temp_file)))
-            else:
-                with open(temp_file, "r", encoding='utf-8', errors='ignore') as f:
-                    repo_content.append(escape_xml(f.read()))
-            repo_content.append('</file>')
-            os.remove(temp_file)
-
-        elif file["type"] == "dir":
-            process_directory(file["url"], repo_content)
-        else:
-            print(f"Skipped {file}")
-
-
-def process_github_repo(repo_url):
-    api_base_url = "https://api.github.com/repos/"
-    repo_url_parts = repo_url.split("https://github.com/")[-1].split("/")
-    repo_name = "/".join(repo_url_parts[:2])
-
-    # Detect if we have a branch or tag reference
-    branch_or_tag = ""
-    subdirectory = ""
-    if len(repo_url_parts) > 2 and repo_url_parts[2] == "tree":
-        # The branch or tag name should be at index 3
-        if len(repo_url_parts) > 3:
-            branch_or_tag = repo_url_parts[3]
-        # Any remaining parts after the branch/tag name form the subdirectory
-        if len(repo_url_parts) > 4:
-            subdirectory = "/".join(repo_url_parts[4:])
-    
-    contents_url = f"{api_base_url}{repo_name}/contents"
-    if subdirectory:
-        contents_url = f"{contents_url}/{subdirectory}"
-    if branch_or_tag:
-        contents_url = f"{contents_url}?ref={branch_or_tag}"
-
-    repo_content = [f'<source type="github_repository" url="{repo_url}">']
-
-    process_directory(contents_url, repo_content)
-    repo_content.append('</source>')
-    print("All files processed.")
-
-    return "\n".join(repo_content)
+    """
+    try:
+        with open(filepath, "r", encoding='utf-8') as file:
+            return file.read()
+    except UnicodeDecodeError:
+        with open(filepath, "r", encoding=fallback_encoding) as file:
+            return file.read()
+        
 
 
 def main():
@@ -138,32 +105,28 @@ def main():
         try:
             # Git functions
             if "github.com" in input_path:
-                if "/pull/" in input_path:
-                    final_output = process_github_pull_request(input_path)
-                elif "/issues/" in input_path:
-                    final_output = process_github_issue(input_path)
-                else:
-                    final_output = process_github_repo(input_path)
+                gitmethods_object = GitMethods()
+                final_output = gitmethods_object.handle_git_url()
 
-            # # URL functions
-            # elif urlparse(input_path).scheme in ["http", "https"]:
-            #     if "youtube.com" in input_path or "youtu.be" in input_path:
-            #         final_output = fetch_youtube_transcript(input_path)
-            #     elif "arxiv.org" in input_path:
-            #         final_output = process_arxiv_pdf(input_path)
-            #     else:
-            #         crawl_result = crawl_and_extract_text(input_path, max_depth=2, include_pdfs=True, ignore_epubs=True)
-            #         final_output = crawl_result['content']
-            #         with open(urls_list_file, 'w', encoding='utf-8') as urls_file:
-            #             urls_file.write('\n'.join(crawl_result['processed_urls']))
+            # URL functions
+            elif urlparse(input_path).scheme in ["http", "https"]:
+                if "youtube.com" in input_path or "youtu.be" in input_path:
+                    final_output = TranscriptionMethods.fetch_youtube_transcript(input_path)
+                elif "arxiv.org" in input_path:
+                    final_output = PDFFileMethods.process_arxiv_pdf(input_path)
+                # else:
+                #     crawl_result = crawl_and_extract_text(input_path, max_depth=2, include_pdfs=True, ignore_epubs=True)
+                #     final_output = crawl_result['content']
+                #     with open(urls_list_file, 'w', encoding='utf-8') as urls_file:
+                #         urls_file.write('\n'.join(crawl_result['processed_urls']))
             
-            # # Scientific papers from https://sci-hub.se/
-            # elif input_path.startswith("10.") and "/" in input_path or input_path.isdigit():
-            #     final_output = process_doi_or_pmid(input_path)
+            # Scientific papers from https://sci-hub.se/
+            elif input_path.startswith("10.") and "/" in input_path or input_path.isdigit():
+                final_output = PDFFileMethods.process_doi_or_pmid(input_path)
             
             # Local folder
-            # else:
-            #     final_output = process_local_folder(input_path)
+            else:
+                final_output = FolderMethods.process_local_folder(input_path)
 
             progress.update(task, advance=50)
 
@@ -173,7 +136,7 @@ def main():
 
 
             # Process the compressed output
-            preprocess_text(output_file, processed_file)
+            TextFileMethods.parse_text_as_xml(output_file, processed_file)
 
             progress.update(task, advance=50)
 
