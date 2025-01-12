@@ -1,8 +1,0 @@
-langchain==0.3.13
-langchain_community
-weaviate-client>=3.26.7,<4.0.0
-protobuf==3.20
-huggingface-hub
-faiss-cpu
-sentence-transformers
-langchain_huggingface==0.1.2
