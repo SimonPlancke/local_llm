@@ -106,8 +106,8 @@ def main():
     
     console.print(f"\n[bold bright_green]You entered:[/bold bright_green] [bold bright_yellow]{input_path}[/bold bright_yellow]\n")
 
-    output_file = "./uncompressed_output.txt"
-    processed_file = "./compressed_output.txt"
+    output_file = "uncompressed_output.txt"
+    processed_file = "compressed_output.txt"
     # urls_list_file = "processed_urls.txt"
 
     with Progress(
@@ -154,7 +154,7 @@ def main():
 
 
             # Process the compressed output
-            TextFileMethods.parse_text_as_xml(output_file, processed_file)
+            TextFileMethods.parse_text_as_xml(input_file=output_file, output_file=processed_file)
 
             progress.update(task, advance=50)
 

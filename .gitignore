@@ -1,5 +1,6 @@
 .venv
 .env
+answers/*.txt
 
 # Ignore obsolete-references
 **/obsolete/**

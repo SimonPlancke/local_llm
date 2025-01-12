@@ -14,8 +14,6 @@ from youtube_transcript_api.formatters import TextFormatter
 
 
 class TextFileMethods():
-    def __init__(self, filepath:str):
-        self.filepath = filepath
 
     @staticmethod
     def clean_text(text):
@@ -36,8 +34,8 @@ class TextFileMethods():
         
         return " ".join(words)
 
-
-    def parse_text_as_xml(self, input_file, output_file):
+    @staticmethod
+    def parse_text_as_xml(input_file, output_file):
         with open(input_file, "r", encoding="utf-8") as input_file:
             input_text = input_file.read()
 
@@ -48,9 +46,9 @@ class TextFileMethods():
             # Process text content while preserving XML structure
             for elem in root.iter():
                 if elem.text:
-                    elem.text = self.clean_text(elem.text)
+                    elem.text = TextFileMethods.clean_text(elem.text)
                 if elem.tail:
-                    elem.tail = self.clean_text(elem.tail)
+                    elem.tail = TextFileMethods.clean_text(elem.tail)
 
             # Write the processed XML to the output file
             tree = ET.ElementTree(root)
@@ -58,7 +56,7 @@ class TextFileMethods():
             print("Text preprocessing completed with XML structure preserved.")
         except ET.ParseError:
             # If XML parsing fails, process the text without preserving XML structure
-            processed_text = self.clean_text(input_text)
+            processed_text = TextFileMethods.clean_text(input_text)
             with open(output_file, "w", encoding="utf-8") as out_file:
                 out_file.write(processed_text)
             Warning("XML parsing failed. Text preprocessing completed without XML structure.")
